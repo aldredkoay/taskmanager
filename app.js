@@ -4,17 +4,32 @@ const path = require('path');
 // const cors = require("cors");
 // const morgan = require("morgan");
 // const low = require("lowdb");
-// const swaggerUI = require("swagger-ui-express")
-// const swaggerJsDoc = require("swagger-jsdoc")
-// const taskRouter = require("./routes/task")
+const swaggerUI = require("swagger-ui-express")
+const swaggerJsDoc = require("swagger-jsdoc")
 const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 3000;
 
 const fs = require('fs');
 
-
-
 const app = express();
+const options = {
+	definition: {
+		openapi:"3.0.0",
+		info: {
+			title: "TaskManager API",
+			version: "1.0.0",
+			description: "A simple task manager project"
+		},
+		servers: [
+			{
+				url: "http://localhost:3000"
+			}
+		]
+	},
+	apis: ["./app.js"] 
+}
+
+const specs = swaggerJsDoc(options)
 
 app.use(session({
 	secret: 'secret',
@@ -23,9 +38,10 @@ app.use(session({
 }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-// app.db = db;
+
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 
 let raw_task = fs.readFileSync(path.resolve(__dirname, 'db.json'));
 const tasklist = JSON.parse(raw_task);
@@ -36,12 +52,11 @@ app.get('/', (req, res)=> {
 
 app.post('/auth', (req, res) => {
 	console.log(req.body);
-	var username = req.body.username;
-	var password = req.body.password;
+	let username = req.body.username;
+	let password = req.body.password;
 
 	session.loggedin = true;
 	session.username = username;
-	// session = req.session;
 	res.redirect('/task');
 });
 
@@ -51,8 +66,6 @@ app.get('/task', (req,res) => {
 		return res.redirect('/');
 	}
 
-
-	// let obj_task = ;
 	let data = [];
 	for (const val in tasklist.task){
 		if (tasklist.task[val]['removed'] == false){
@@ -113,11 +126,13 @@ app.post('/task/edit', (req, res) =>{
 app.post('/task/update', (req, res) =>{
 	id = req.body.id;
 	taskname = req.body.taskname;
+	status = req.body.status;
 	edit_list = [];
 	for (const val in tasklist.task){
 		console.log(tasklist.task[val], tasklist.task[val]['id'] == id);
 		if (tasklist.task[val]['id'] == id) {
 			tasklist.task[val]['taskname'] = taskname;
+			tasklist.task[val]['status'] = status;
 			// console.log(tasklist.task[val]);
 		}		
 	}
@@ -132,6 +147,7 @@ app.post('/task/update', (req, res) =>{
     });
 });
 
+// Task Delete
 app.post('/task/delete', (req, res) => {
 	id = req.body.id;
 	for (const val in tasklist.task){		
@@ -150,6 +166,7 @@ app.post('/task/delete', (req, res) => {
 	
 });
 
+// Logout
 app.post('/logout', (req, res)=> {
 	session.loggedin = true;
 	session.username = '';
@@ -159,64 +176,3 @@ app.post('/logout', (req, res)=> {
 app.listen(PORT, () => {
 	console.log("Serve is listening on port 3000");
 });
-
-
-
-
-
-// // var mysql = require('mysql');
-// const express = require('express');
-// var session = require('express-session');
-// var bodyParser = require('body-parser');
-// 
-// // var loginRouter = require('./route/login');
-// // var connection = mysql.createConnection({
-// // 	host     : 'localhost',
-// // 	user     : 'root',
-// // 	password : '',
-// // 	database : 'nodelogin'
-// // });
-// var tasklist = [];
-// var app = express();
-// app.use(session({
-// 	secret: 'secret',
-// 	resave: true,
-// 	saveUninitialized: true
-// }));
-// app.use(bodyParser.urlencoded({extended : true}));
-// app.use(bodyParser.json());
-// app.set('view engine', 'ejs');
-// app.set('views', path.join(__dirname, '/html/'));
-// app.get('/login', function(request, response) {
-// 	response.sendFile(path.join(__dirname + '/html/login.html'));
-// });
-
-
-// app.post('/auth', function(request, response) {
-// 	var username = request.body.username;
-// 	var password = request.body.password;
-
-// 	request.session.loggedin = true;
-// 	request.session.username = username;
-// 	response.redirect('/task');
-// });
-
-// app.get('/task', function(request, response) {
-// 	response.sendFile(path.join(__dirname + '/html/task.html'));
-// 	response.render('task', {task : tasklist});
-// 	// console.log(tasklist);
-// 	// if (request.session.loggedin) {
-// 	// 	response.send('Welcome back, ' + request.session.username + '!');
-// 	// } else {
-// 	// 	response.send('Please login to view this page!');
-// 	// }
-// 	// response.end();
-// });
-
-// app.post('/addtask', function(request, response) {
-// 	var taskname = request.body.taskname;
-// 	tasklist.push(taskname);
-// 	response.redirect('/task');
-// });
-
-// app.listen(3000);
