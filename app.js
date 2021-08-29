@@ -1,16 +1,11 @@
 const express = require('express');
 const session = require('express-session'); 
 const path = require('path');
-// const cors = require("cors");
-// const morgan = require("morgan");
-// const low = require("lowdb");
 const swaggerUI = require("swagger-ui-express")
 const swaggerJsDoc = require("swagger-jsdoc")
 const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 3000;
-
 const fs = require('fs');
-
 const app = express();
 const options = {
 	definition: {
@@ -43,13 +38,15 @@ app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 
+// Get the tasklist data from json.
 let raw_task = fs.readFileSync(path.resolve(__dirname, 'db.json'));
 const tasklist = JSON.parse(raw_task);
-// console.log(tasklist);
+
 app.get('/', (req, res)=> {
 	return res.render('login');
 });
 
+// Get auth form
 app.post('/auth', (req, res) => {
 	console.log(req.body);
 	let username = req.body.username;
@@ -60,6 +57,7 @@ app.post('/auth', (req, res) => {
 	res.redirect('/task');
 });
 
+// Get Task List
 app.get('/task', (req,res) => {
 	console.log(session.username);
 	if (!session.username) {
@@ -80,6 +78,7 @@ app.get('/task', (req,res) => {
 	})
 })
 
+// Task Add 
 app.post('/task', (req, res) => {
 	let taskname = req.body.taskname;
 	// let tasklist = JSON.parse(tasklist);
@@ -93,19 +92,15 @@ app.post('/task', (req, res) => {
 		removed: false
 	})
 
-	// obj.table.push({id: 1, square:2});
-	// Convert it from an object to a string with JSON.stringify
-
 	var json = JSON.stringify(tasklist);
 	// Use fs to write the file to disk
-
-	// var fs = require('fs');
 	fs.writeFile('db.json', json, 'utf8', (err) => {
     if (err) throw err;
     	return res.redirect('/task')
     });
 });
 
+// Task Edit Form
 app.post('/task/edit', (req, res) =>{
 	id = req.body.id;
 	edit_list = [];
@@ -123,6 +118,7 @@ app.post('/task/edit', (req, res) =>{
 	});
 });
 
+// Task Update
 app.post('/task/update', (req, res) =>{
 	id = req.body.id;
 	taskname = req.body.taskname;
@@ -173,6 +169,7 @@ app.post('/logout', (req, res)=> {
 	return res.redirect('/');
 });
 
+// Task listen to run on localhost
 app.listen(PORT, () => {
 	console.log("Serve is listening on port 3000");
 });
